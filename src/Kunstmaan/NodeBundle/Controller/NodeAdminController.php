@@ -302,7 +302,7 @@ class NodeAdminController extends Controller
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         $request = $this->get('request_stack')->getCurrentRequest();
-
+// FIXME this code has to move to helper method or service, double now!
         if ($request->get('pub_date')) {
             $date = new \DateTime(
                 $request->get('pub_date') . ' ' . $request->get('pub_time')
@@ -872,6 +872,7 @@ class NodeAdminController extends Controller
             $nodeVersion = $draftNodeVersion;
             $page = $nodeVersion->getRef($this->em);
         } else {
+// FIXME: if the form is invalid, the (un)publishing should fail!
             if ($request->getMethod() == 'POST') {
                 $nodeVersionIsLocked = $this->isNodeVersionLocked($nodeTranslation, true);
 
@@ -908,6 +909,34 @@ class NodeAdminController extends Controller
             $page = $nodeVersion->getRef($this->em);
         }
         $isStructureNode = $page->isStructureNode();
+
+        // FIXME: check for publish (or unpubish) and trigger the code that was previously in the (un)publish action
+        // FIXME: the handling of the (un)publishing should be in a helper so it can be accessed both ways, here and directy in the publish action
+        if($request->request->has('publishing')) {
+            // FIXME this code has to move to helper method or service, double now!
+            if ($request->get('pub_date')) {
+                $date = new \DateTime(
+                    $request->get('pub_date') . ' ' . $request->get('pub_time')
+                );
+                $this->get('kunstmaan_node.admin_node.publisher')->publishLater(
+                    $nodeTranslation,
+                    $date
+                );
+                $this->addFlash(
+                    FlashTypes::SUCCESS,
+                    $this->get('translator')->trans('kuma_node.admin.publish.flash.success_scheduled')
+                );
+            } else {
+                $this->get('kunstmaan_node.admin_node.publisher')->publish(
+                    $nodeTranslation
+                );
+                $this->addFlash(
+                    FlashTypes::SUCCESS,
+                    $this->get('translator')->trans('kuma_node.admin.publish.flash.success_published')
+                );
+            }
+        }
+        // FIXME: somehting ain't right, the publish later is triggered even when not asked to publish later
 
         $menubuilder = $this->get('kunstmaan_node.actions_menu_builder');
         $menubuilder->setActiveNodeVersion($nodeVersion);
@@ -1013,7 +1042,7 @@ class NodeAdminController extends Controller
             'KunstmaanNodeBundle:QueuedNodeTranslationAction'
         )->findOneBy(array('nodeTranslation' => $nodeTranslation));
 
-        return array(
+        return [
             'page' => $page,
             'entityname' => ClassLookup::getClass($page),
             'nodeVersions' => $nodeVersions,
@@ -1027,8 +1056,8 @@ class NodeAdminController extends Controller
             'editmode' => true,
             'queuedNodeTranslationAction' => $queuedNodeTranslationAction,
             'nodeVersionLockCheck' => $this->container->getParameter('kunstmaan_node.lock_enabled'),
-            'nodeVersionLockInterval' => $this->container->getParameter('kunstmaan_node.lock_check_interval')
-        );
+            'nodeVersionLockInterval' => $this->container->getParameter('kunstmaan_node.lock_check_interval'),
+        ];
     }
 
     /**
