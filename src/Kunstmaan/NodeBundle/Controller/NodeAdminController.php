@@ -91,6 +91,7 @@ class NodeAdminController extends Controller
         $this->authorizationChecker = $this->get('security.authorization_checker');
         $this->user = $this->getUser();
         $this->aclHelper = $this->get('kunstmaan_admin.acl.helper');
+        $this->nodePublisher = $this->get('kunstmaan_node.admin_node.publisher');
     }
 
     /**
@@ -302,7 +303,7 @@ class NodeAdminController extends Controller
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         $request = $this->get('request_stack')->getCurrentRequest();
-        $this->publishHelper($request, $nodeTranslation);
+        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation);
 
         return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $node->getId())));
     }
@@ -329,7 +330,7 @@ class NodeAdminController extends Controller
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         $request = $this->get('request_stack')->getCurrentRequest();
-        $this->unpublishHelper($request, $nodeTranslation);
+        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation);
 
         return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $node->getId())));
     }
@@ -356,7 +357,7 @@ class NodeAdminController extends Controller
         $node = $this->em->getRepository('KunstmaanNodeBundle:Node')->find($id);
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
-        $this->get('kunstmaan_node.admin_node.publisher')->unSchedulePublish($nodeTranslation);
+        $this->nodePublisher->unSchedulePublish($nodeTranslation);
 
         $this->addFlash(
             FlashTypes::SUCCESS,
@@ -854,7 +855,7 @@ class NodeAdminController extends Controller
                 if ($thresholdDate >= $updatedDate || $nodeVersionIsLocked) {
                     $page = $nodeVersion->getRef($this->em);
                     if ($nodeVersion == $nodeTranslation->getPublicNodeVersion()) {
-                        $this->get('kunstmaan_node.admin_node.publisher')
+                        $this->nodePublisher
                             ->createPublicVersion(
                                 $page,
                                 $nodeTranslation,
@@ -944,9 +945,9 @@ class NodeAdminController extends Controller
                     );
                 } else {
                     if ($request->request->has('publishing') || $request->request->has('publish_later')) {
-                        $this->publishHelper($request, $nodeTranslation);
+                        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation);
                     } elseif ($request->request->has('unpublishing') || $request->request->has('unpublish_later')) {
-                        $this->unpublishHelper($request, $nodeTranslation);
+                        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation);
                     } else {
                         $this->addFlash(
                             FlashTypes::SUCCESS,
@@ -1284,56 +1285,5 @@ class NodeAdminController extends Controller
                 'copyfromotherlanguages' => $parentsAreOk
             )
         );
-    }
-
-    /**
-     * @param Request         $request
-     * @param NodeTranslation $nodeTranslation
-     */
-    private function publishHelper(Request $request, NodeTranslation $nodeTranslation)
-    {
-        if ($request->request->has('publish_later') && $request->get('pub_date')) {
-            $date = new \DateTime(
-                $request->get('pub_date') . ' ' . $request->get('pub_time')
-            );
-            $this->get('kunstmaan_node.admin_node.publisher')->publishLater(
-                $nodeTranslation,
-                $date
-            );
-            $this->addFlash(
-                FlashTypes::SUCCESS,
-                $this->get('translator')->trans('kuma_node.admin.publish.flash.success_scheduled')
-            );
-        } else {
-            $this->get('kunstmaan_node.admin_node.publisher')->publish(
-                $nodeTranslation
-            );
-            $this->addFlash(
-                FlashTypes::SUCCESS,
-                $this->get('translator')->trans('kuma_node.admin.publish.flash.success_published')
-            );
-        }
-    }
-
-    /**
-     * @param Request         $request
-     * @param NodeTranslation $nodeTranslation
-     */
-    private function unpublishHelper(Request $request, NodeTranslation $nodeTranslation)
-    {
-        if ($request->request->has('unpublish_later') && $request->get('unpub_date')) {
-            $date = new \DateTime($request->get('unpub_date') . ' ' . $request->get('unpub_time'));
-            $this->get('kunstmaan_node.admin_node.publisher')->unPublishLater($nodeTranslation, $date);
-            $this->addFlash(
-                FlashTypes::SUCCESS,
-                $this->get('translator')->trans('kuma_node.admin.unpublish.flash.success_scheduled')
-            );
-        } else {
-            $this->get('kunstmaan_node.admin_node.publisher')->unPublish($nodeTranslation);
-            $this->addFlash(
-                FlashTypes::SUCCESS,
-                $this->get('translator')->trans('kuma_node.admin.unpublish.flash.success_unpublished')
-            );
-        }
     }
 }

@@ -14,9 +14,13 @@ use Kunstmaan\NodeBundle\Entity\QueuedNodeTranslationAction;
 use Kunstmaan\NodeBundle\Event\Events;
 use Kunstmaan\NodeBundle\Event\NodeEvent;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Security\Core\Authentication\Token\Storage\TokenStorageInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Translation\TranslatorInterface;
+use Kunstmaan\AdminBundle\FlashMessages\FlashTypes;
 
 class NodeAdminPublisher
 {
@@ -45,6 +49,12 @@ class NodeAdminPublisher
      */
     private $cloneHelper;
 
+    /** @var Session */
+    private $session;
+
+    /** @var TranslatorInterface */
+    private $translator;
+
     /**
      * @param EntityManager                  $em                    The entity manager
      * @param TokenStorageInterface          $tokenStorage          The security token storage
@@ -57,13 +67,17 @@ class NodeAdminPublisher
         TokenStorageInterface $tokenStorage,
         AuthorizationCheckerInterface $authorizationChecker,
         EventDispatcherInterface $eventDispatcher,
-        CloneHelper $cloneHelper
+        CloneHelper $cloneHelper,
+        Session $session,
+        TranslatorInterface $translator
     ) {
         $this->em                   = $em;
         $this->tokenStorage         = $tokenStorage;
         $this->authorizationChecker = $authorizationChecker;
         $this->eventDispatcher      = $eventDispatcher;
         $this->cloneHelper          = $cloneHelper;
+        $this->session              = $session;
+        $this->translator           = $translator;
     }
 
     /**
@@ -262,5 +276,51 @@ class NodeAdminPublisher
         );
 
         return $newNodeVersion;
+    }
+
+    /**
+     * @param Request         $request
+     * @param NodeTranslation $nodeTranslation
+     */
+    public function chooseHowToPublish(Request $request, NodeTranslation $nodeTranslation)
+    {
+        if ($request->request->has('publish_later') && $request->get('pub_date')) {
+            $date = new \DateTime(
+                $request->get('pub_date') . ' ' . $request->get('pub_time')
+            );
+            $this->publishLater($nodeTranslation, $date);
+            $this->session->getFlashBag()->add(
+                FlashTypes::SUCCESS,
+                $this->translator->trans('kuma_node.admin.publish.flash.success_scheduled')
+            );
+        } else {
+            $this->publish($nodeTranslation);
+            $this->session->getFlashBag()->add(
+                FlashTypes::SUCCESS,
+                $this->translator->trans('kuma_node.admin.publish.flash.success_published')
+            );
+        }
+    }
+
+    /**
+     * @param Request         $request
+     * @param NodeTranslation $nodeTranslation
+     */
+    public function chooseHowToUnpublish(Request $request, NodeTranslation $nodeTranslation)
+    {
+        if ($request->request->has('unpublish_later') && $request->get('unpub_date')) {
+            $date = new \DateTime($request->get('unpub_date') . ' ' . $request->get('unpub_time'));
+            $this->unPublishLater($nodeTranslation, $date);
+            $this->session->getFlashBag()->add(
+                FlashTypes::SUCCESS,
+                $this->translator->trans('kuma_node.admin.unpublish.flash.success_scheduled')
+            );
+        } else {
+            $this->unPublish($nodeTranslation);
+            $this->session->getFlashBag()->add(
+                FlashTypes::SUCCESS,
+                $this->translator->trans('kuma_node.admin.unpublish.flash.success_unpublished')
+            );
+        }
     }
 }
