@@ -49,9 +49,6 @@ class NodeAdminPublisher
      */
     private $cloneHelper;
 
-    /** @var TranslatorInterface */
-    private $translator;
-
     /**
      * @param EntityManager                  $em                    The entity manager
      * @param TokenStorageInterface          $tokenStorage          The security token storage
@@ -64,15 +61,13 @@ class NodeAdminPublisher
         TokenStorageInterface $tokenStorage,
         AuthorizationCheckerInterface $authorizationChecker,
         EventDispatcherInterface $eventDispatcher,
-        CloneHelper $cloneHelper,
-        TranslatorInterface $translator
+        CloneHelper $cloneHelper
     ) {
         $this->em                   = $em;
         $this->tokenStorage         = $tokenStorage;
         $this->authorizationChecker = $authorizationChecker;
         $this->eventDispatcher      = $eventDispatcher;
         $this->cloneHelper          = $cloneHelper;
-        $this->translator           = $translator;
     }
 
     /**
@@ -277,7 +272,7 @@ class NodeAdminPublisher
      * @param Request         $request
      * @param NodeTranslation $nodeTranslation
      */
-    public function chooseHowToPublish(Request $request, NodeTranslation $nodeTranslation)
+    public function chooseHowToPublish(Request $request, NodeTranslation $nodeTranslation, TranslatorInterface $translator)
     {
         /** @var Session $session */
         $session = $request->getSession();
@@ -289,13 +284,13 @@ class NodeAdminPublisher
             $this->publishLater($nodeTranslation, $date);
             $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
-                $this->translator->trans('kuma_node.admin.publish.flash.success_scheduled')
+                $translator->trans('kuma_node.admin.publish.flash.success_scheduled')
             );
         } else {
             $this->publish($nodeTranslation);
             $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
-                $this->translator->trans('kuma_node.admin.publish.flash.success_published')
+                $translator->trans('kuma_node.admin.publish.flash.success_published')
             );
         }
     }
@@ -304,7 +299,7 @@ class NodeAdminPublisher
      * @param Request         $request
      * @param NodeTranslation $nodeTranslation
      */
-    public function chooseHowToUnpublish(Request $request, NodeTranslation $nodeTranslation)
+    public function chooseHowToUnpublish(Request $request, NodeTranslation $nodeTranslation, TranslatorInterface $translator)
     {
         /** @var Session $session */
         $session = $request->getSession();
@@ -314,13 +309,13 @@ class NodeAdminPublisher
             $this->unPublishLater($nodeTranslation, $date);
             $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
-                $this->translator->trans('kuma_node.admin.unpublish.flash.success_scheduled')
+                $translator->trans('kuma_node.admin.unpublish.flash.success_scheduled')
             );
         } else {
             $this->unPublish($nodeTranslation);
             $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
-                $this->translator->trans('kuma_node.admin.unpublish.flash.success_unpublished')
+                $translator->trans('kuma_node.admin.unpublish.flash.success_unpublished')
             );
         }
     }

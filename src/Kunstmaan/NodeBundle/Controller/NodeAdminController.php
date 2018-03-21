@@ -48,6 +48,7 @@ use Symfony\Component\Security\Acl\Model\MutableAclProviderInterface;
 use Symfony\Component\Security\Acl\Model\ObjectIdentityRetrievalStrategyInterface;
 use Symfony\Component\Security\Core\Authorization\AuthorizationCheckerInterface;
 use Symfony\Component\Security\Core\Exception\AccessDeniedException;
+use Symfony\Component\Translation\TranslatorInterface;
 
 /**
  * NodeAdminController
@@ -84,6 +85,10 @@ class NodeAdminController extends Controller
      */
     protected $nodePublisher;
 
+    /**
+     * @var TranslatorInterface
+     */
+    protected $translator;
 
     /**
      * init
@@ -98,6 +103,7 @@ class NodeAdminController extends Controller
         $this->user = $this->getUser();
         $this->aclHelper = $this->get('kunstmaan_admin.acl.helper');
         $this->nodePublisher = $this->get('kunstmaan_node.admin_node.publisher');
+        $this->translator = $this->get('translator');
     }
 
     /**
@@ -309,7 +315,7 @@ class NodeAdminController extends Controller
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         $request = $this->get('request_stack')->getCurrentRequest();
-        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation);
+        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation, $this->translator);
 
         return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $node->getId())));
     }
@@ -336,7 +342,7 @@ class NodeAdminController extends Controller
 
         $nodeTranslation = $node->getNodeTranslation($this->locale, true);
         $request = $this->get('request_stack')->getCurrentRequest();
-        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation);
+        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation, $this->translator);
 
         return $this->redirect($this->generateUrl('KunstmaanNodeBundle_nodes_edit', array('id' => $node->getId())));
     }
@@ -951,9 +957,9 @@ class NodeAdminController extends Controller
                     );
                 } else {
                     if ($request->request->has('publishing') || $request->request->has('publish_later')) {
-                        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation);
+                        $this->nodePublisher->chooseHowToPublish($request, $nodeTranslation, $this->translator);
                     } elseif ($request->request->has('unpublishing') || $request->request->has('unpublish_later')) {
-                        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation);
+                        $this->nodePublisher->chooseHowToUnpublish($request, $nodeTranslation, $this->translator);
                     } else {
                         $this->addFlash(
                             FlashTypes::SUCCESS,
