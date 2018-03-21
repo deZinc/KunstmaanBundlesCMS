@@ -55,7 +55,6 @@ services:
             - '@security.authorization_checker'
             - '@event_dispatcher'
             - '@kunstmaan_admin.clone.helper'
-            - '@session'
             - '@translator'
 
     kunstmaan_node.admin_node.node_version_lock_helper:

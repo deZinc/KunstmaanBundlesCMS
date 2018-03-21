@@ -31,6 +31,7 @@ use Kunstmaan\NodeBundle\Event\RecopyPageTranslationNodeEvent;
 use Kunstmaan\NodeBundle\Event\RevertNodeAction;
 use Kunstmaan\NodeBundle\Form\NodeMenuTabAdminType;
 use Kunstmaan\NodeBundle\Form\NodeMenuTabTranslationAdminType;
+use Kunstmaan\NodeBundle\Helper\NodeAdmin\NodeAdminPublisher;
 use Kunstmaan\NodeBundle\Helper\NodeAdmin\NodeVersionLockHelper;
 use Kunstmaan\NodeBundle\Repository\NodeVersionRepository;
 use Kunstmaan\UtilitiesBundle\Helper\ClassLookup;
@@ -77,6 +78,11 @@ class NodeAdminController extends Controller
      * @var AclHelper $aclHelper
      */
     protected $aclHelper;
+
+    /**
+     * @var NodeAdminPublisher
+     */
+    protected $nodePublisher;
 
 
     /**

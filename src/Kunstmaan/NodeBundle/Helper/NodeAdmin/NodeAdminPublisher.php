@@ -49,9 +49,6 @@ class NodeAdminPublisher
      */
     private $cloneHelper;
 
-    /** @var Session */
-    private $session;
-
     /** @var TranslatorInterface */
     private $translator;
 
@@ -68,7 +65,6 @@ class NodeAdminPublisher
         AuthorizationCheckerInterface $authorizationChecker,
         EventDispatcherInterface $eventDispatcher,
         CloneHelper $cloneHelper,
-        Session $session,
         TranslatorInterface $translator
     ) {
         $this->em                   = $em;
@@ -76,7 +72,6 @@ class NodeAdminPublisher
         $this->authorizationChecker = $authorizationChecker;
         $this->eventDispatcher      = $eventDispatcher;
         $this->cloneHelper          = $cloneHelper;
-        $this->session              = $session;
         $this->translator           = $translator;
     }
 
@@ -284,18 +279,21 @@ class NodeAdminPublisher
      */
     public function chooseHowToPublish(Request $request, NodeTranslation $nodeTranslation)
     {
+        /** @var Session $session */
+        $session = $request->getSession();
+
         if ($request->request->has('publish_later') && $request->get('pub_date')) {
             $date = new \DateTime(
                 $request->get('pub_date') . ' ' . $request->get('pub_time')
             );
             $this->publishLater($nodeTranslation, $date);
-            $this->session->getFlashBag()->add(
+            $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
                 $this->translator->trans('kuma_node.admin.publish.flash.success_scheduled')
             );
         } else {
             $this->publish($nodeTranslation);
-            $this->session->getFlashBag()->add(
+            $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
                 $this->translator->trans('kuma_node.admin.publish.flash.success_published')
             );
@@ -308,16 +306,19 @@ class NodeAdminPublisher
      */
     public function chooseHowToUnpublish(Request $request, NodeTranslation $nodeTranslation)
     {
+        /** @var Session $session */
+        $session = $request->getSession();
+
         if ($request->request->has('unpublish_later') && $request->get('unpub_date')) {
             $date = new \DateTime($request->get('unpub_date') . ' ' . $request->get('unpub_time'));
             $this->unPublishLater($nodeTranslation, $date);
-            $this->session->getFlashBag()->add(
+            $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
                 $this->translator->trans('kuma_node.admin.unpublish.flash.success_scheduled')
             );
         } else {
             $this->unPublish($nodeTranslation);
-            $this->session->getFlashBag()->add(
+            $session->getFlashBag()->add(
                 FlashTypes::SUCCESS,
                 $this->translator->trans('kuma_node.admin.unpublish.flash.success_unpublished')
             );
