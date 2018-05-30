@@ -12,6 +12,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
+use Symfony\Component\Console\Exception\InvalidArgumentException;
 
 /**
  * Symfony CLI command to create a user using bin/console kuma:user:create <username_of_the_user>
@@ -79,6 +80,18 @@ EOT
         $inactive = $input->getOption('inactive');
         $groupOption = $input->getOption('group');
 
+        // Find and validate existence of groups
+        $groups = $this->getContainer()->get('fos_user.group_manager')->findGroups();
+        if (!$groups) {
+            throw new InvalidArgumentException('No user group(s) could be found');
+        }
+
+        // Validate that the chosen group options exist in the available groups
+        $groupNames = array_unique(explode(',', $groupOption));
+        if (count(array_intersect_key(array_flip($groupNames),$groups)) !== count($groupNames)) {
+            throw new InvalidArgumentException('You have chosen non existing group(s)');
+        }
+
         if (null !== $locale) {
             $locale = $this->getContainer()->getParameter('kunstmaan_admin.default_admin_locale');
         }
@@ -100,20 +113,12 @@ EOT
         $user = $em->getRepository($userClassName)->findOneBy(array('username' => $username));
 
         // Attach groups
-        $groupNames = explode(',', $groupOption);
         /** @var Group[] $groups */
-        $groups = $this->getContainer()->get('fos_user.group_manager')->findGroups();
         $groupOutput = '';
 
         foreach ($groupNames as $groupName) {
-
-            if ((int)$groupName !== 0) {
-                $group = $em->getRepository('KunstmaanAdminBundle:Group')->findOneBy(array('name' => $groups[$groupName]->getName()));
-                $groupOutput .= $groups[$groupName]->getName() . ', ';
-            } else {
-                $group = $em->getRepository('KunstmaanAdminBundle:Group')->findOneBy(array('name' => $groupName));
-                $groupOutput .= $groupName . ', ';
-            }
+            $group = $em->getRepository('KunstmaanAdminBundle:Group')->findOneBy(array('name' => $groups[$groupName]->getName()));
+            $groupOutput .= $groups[$groupName]->getName() . ', ';
 
             if ($group instanceof Group) {
                 $user->getGroups()->add($group);
