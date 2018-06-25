@@ -30,7 +30,7 @@
         "liip/imagine-bundle": "^1.9",
         "monolog/monolog": "^1.23",
         "psr/container": "^1.0",
-        "sensio/framework-extra-bundle": "^5.1",
+        "sensio/framework-extra-bundle": "^3.0.2",
         "sensio/generator-bundle": "^3.1",
         "swiftmailer/swiftmailer": "^5.4",
         "symfony/asset": "^3.4",
