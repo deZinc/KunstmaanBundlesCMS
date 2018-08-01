@@ -38,6 +38,7 @@
         "ruflin/elastica": "^5.1|^6.0",
         "sensio/framework-extra-bundle": "^3.0.2",
         "sensio/generator-bundle": "^3.1",
+        "stof/doctrine-extensions-bundle": "^1.3",
         "swiftmailer/swiftmailer": "^6.1",
         "symfony/asset": "^3.4",
         "symfony/browser-kit": "^3.4",
@@ -61,6 +62,7 @@
         "symfony/security-acl": "^3.0",
         "symfony/serializer": "^3.4",
         "symfony/swiftmailer-bundle": "^3.2",
+        "symfony/templating": "^3.4",
         "symfony/translation": "^3.4",
         "symfony/validator": "^3.4",
         "symfony/yaml": "^3.4",
@@ -69,13 +71,21 @@
         "white-october/pagerfanta-bundle": "^1.2"
     },
     "require-dev": {
+        "behat/behat": "^3.4",
+        "behat/mink": "dev-master",
+        "behat/mink-browserkit-driver": "dev-master",
+        "behat/mink-goutte-driver": "dev-master",
+        "behat/mink-sahi-driver": "dev-master",
+        "behat/mink-selenium2-driver": "dev-master",
+        "behat/symfony2-extension": "^2.1",
         "codeception/codeception": "~2.3",
         "ekino/newrelic-bundle": "^1.4",
         "fzaninotto/faker": "^1.8",
         "matthiasnoback/symfony-config-test": "^2.2",
         "matthiasnoback/symfony-dependency-injection-test": "^1.2",
         "nelmio/alice": "^2.1",
-        "phpunit/phpunit": "^5.7"
+        "phpunit/phpunit": "^5.7",
+        "symfony/phpunit-bridge": "^4.1"
     },
     "replace": {
         "kunstmaan/admin-bundle": "self.version",
