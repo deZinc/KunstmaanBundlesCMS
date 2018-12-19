@@ -72,7 +72,8 @@
         "ruflin/elastica": "^5.1|^6.0",
         "behat/transliterator": "~1.2",
         "defuse/php-encryption": "v2.1.0",
-        "symfony/maker-bundle": "^1.9"
+        "symfony/maker-bundle": "^1.9",
+        "symfony/monolog-bundle": "^3.3"
     },
     "require-dev": {
         "behat/behat": "3.1.0rc1",
