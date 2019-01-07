@@ -20,6 +20,7 @@ use Symfony\Component\Form\Extension\Core\Type\NumberType;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
+use Symfony\Component\HttpKernel\Kernel;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Yaml;
 
@@ -100,22 +101,24 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      * Get an array with all the bundles the user has created.
      *
      * @return array
+     *
+     * @deprecated
      */
     protected function getOwnBundles()
     {
 // fixme: BUNDLE???
-        $bundles = array();
+        $bundles = [];
         $counter = 1;
         $dir = dirname($this->getContainer()->getParameter('kernel.root_dir').'/').'/src/';
         $finder = new Finder();
         $finder->in($dir)->name('*Bundle.php');
 
         foreach ($finder as $file) {
-            $bundles[$counter++] = array(
+            $bundles[$counter++] = [
                 'name' => basename($file->getFilename(), '.php'),
                 'namespace' => $file->getRelativePath(),
                 'dir' => $file->getPath(),
-            );
+            ];
         }
 
         return $bundles;
@@ -189,6 +192,36 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         return $prefix;
     }
 
+    protected function askForNamespace(string $object, $namespace = null)
+    {
+        if ((float) Kernel::VERSION > 4.0) {
+            $default = 'App';
+        } else {
+            $default = 'Acme\WebsiteBundle';
+        }
+
+        $default = sprintf('%s\%s', $default, $object);
+
+        $namespace = $this->assistant->getOptionOrDefault('namespace', $default);
+
+        while (is_null($namespace)) {
+
+            $text = sprintf('Choose the namespace where you want the entity generated, eg.: <comment>%s</comment>', $default, $object);
+            $this->assistant->writeLine($text);
+
+            $namespace = $this->assistant->ask('Namespace ', $default);
+
+            if ($namespace == '') {
+                break;
+            }
+
+// FIXME: need some validation here!
+//            $output = $this->assistant->getOutput();
+
+            $this->assistant->setOption('namespace', $namespace);
+        }
+    }
+
     /**
      * Converts something like Namespace\BundleNameBundle to namespace_bundlenamebundle.
      *
@@ -228,6 +261,9 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      * @param string      $questionOneBundle
      *
      * @return BundleInterface
+     *
+     * FIXME: this should be removed!
+     * @deprecated
      */
     protected function askForBundleName($objectName, $namespace = null, $questionMoreBundles = "\nIn which bundle do you want to create the %s", $questionOneBundle = "The %s will be created for the <comment>%s</comment> bundle.\n")
     {
@@ -277,14 +313,10 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
             }
         }
 
+// FIXME: I don't want a bundle! I want a namespace / target dir
         $bundle = $this->assistant->getKernel()->getBundle($bundleName);
 
         return $bundle;
-    }
-
-    protected function askForDestinationPath()
-    {
-        
     }
 
     /**
@@ -410,6 +442,7 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      */
     protected function askEntityFields(BundleInterface $bundle, array $reservedFields = array('id'))
     {
+// FIXME: $bundle needs to be replaced
         $this->assistant->writeLine('<info>Available field types:</info> ');
         $typeSelect = $this->getTypes(true);
         foreach ($typeSelect as $type) {
@@ -653,6 +686,8 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         $maxWidth = null,
         $mimeTypes = null
     ) {
+        @trigger_error('The bundle parameter is no longer used and will be removed in KunstmaanGeneratorBundle 6.0', E_USER_DEPRECATED);
+
         $fields = array();
         switch ($type) {
             case 'single_line':

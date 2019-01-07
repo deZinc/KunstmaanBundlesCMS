@@ -44,6 +44,7 @@ class GenerateEntityCommand extends KunstmaanGenerateCommand
         $this
             ->setName('kuma:generate:entity')
             ->setDescription('Generates a new Doctrine entity')
+            ->addOption('namespace', '', InputOption::VALUE_OPTIONAL, 'The namespace where you want the entity to be generated')
             ->addOption('prefix', '', InputOption::VALUE_OPTIONAL, 'The prefix to be used in the table names of the generated entities')
             ->addOption('with-repository', null, InputOption::VALUE_NONE, 'Whether to generate the entity repository or not (y/n)')
             ->setHelp(<<<'EOT'
@@ -65,6 +66,7 @@ EOT
 
     /**
      * @return DefaultEntityGenerator
+     * @todo remove the getContainers and use injection in the KunstmaanGeneratorBundle 6.0
      */
     protected function createGenerator()
     {
@@ -111,13 +113,14 @@ EOT
         /*
          * Ask for which bundle we need to create the pagepart
          */
-// FIXME: we need decission making login here, sf3 or sf4, different path
-        $this->bundle = $this->askForBundleName('entity');
+        $this->namespace = $this->askForNamespace('Entity');
+// FIXME: remove this
+//        $this->bundle = $this->askForBundleName('entity');
 
         /*
          * Ask the database table prefix
          */
-        $this->prefix = $this->askForPrefix(null, $this->bundle->getNamespace());
+        $this->prefix = $this->askForPrefix(null, $this->namespace);
 
         /*
          * Ask the name of the entity
@@ -160,6 +163,7 @@ EOT
         $this->assistant->writeLine(array("\nInstead of starting with a blank entity, you can add some fields now.\n"));
         $fields = $this->askEntityFields($this->bundle);
         $this->fields = array_map(function ($fieldInfo) {
+// FIXME: remove the $this->bundle's as paramaters here!
             switch ($fieldInfo['type']) {
                 case 'image':
                     return $this->getEntityFields($this->bundle, $this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'],
