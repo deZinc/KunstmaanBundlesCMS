@@ -1,0 +1,4 @@
+services:
+    Kunstmaan\GeneratorBundle\Command\GenerateEntityCommand:
+        tags:
+            - { name: console.command }
