@@ -65,7 +65,6 @@
         "symfony-cmf/routing-bundle": "~2.0",
         "fpn/doctrine-extensions-taggable": "~0.9",
         "twig/twig": "^1.12|^2.0",
-        "sensio/generator-bundle": "~3.0",
         "twig/twig": "^1.36|^2.6",
         "twig/extensions": "~1.0",
         "egulias/email-validator": "^1.2.8|^2.0",
@@ -74,7 +73,8 @@
         "behat/transliterator": "~1.2",
         "defuse/php-encryption": "v2.1.0",
         "symfony/maker-bundle": "^1.9",
-        "symfony/monolog-bundle": "^3.3"
+        "symfony/monolog-bundle": "^3.3",
+        "kunstmaan/sensio-generator-bundle": "^3.2"
     },
     "require-dev": {
         "behat/behat": "3.1.0rc1",

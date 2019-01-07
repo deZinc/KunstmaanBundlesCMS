@@ -43,22 +43,22 @@ class GenerateEntityCommand extends KunstmaanGenerateCommand
     {
         $this
             ->setName('kuma:generate:entity')
-            ->setDescription('Generates a new Doctrine entity inside a bundle')
+            ->setDescription('Generates a new Doctrine entity')
             ->addOption('prefix', '', InputOption::VALUE_OPTIONAL, 'The prefix to be used in the table names of the generated entities')
             ->addOption('with-repository', null, InputOption::VALUE_NONE, 'Whether to generate the entity repository or not (y/n)')
             ->setHelp(<<<'EOT'
 The <info>kuma:generate:entity</info> task generates a new entity inside a bundle:
 
-<info>php app/console kuma:generate:entity</info>
+<info>php bin/console kuma:generate:entity</info>
 
 The command can also generate the corresponding entity repository class with the
 <comment>--with-repository</comment> option:
 
-<info>php app/console kuma:generate:entity --with-repository</info>
+<info>php bin/console kuma:generate:entity --with-repository</info>
 
 Use the <info>--prefix</info> option to add a prefix to the table names of the generated entities
 
-<info>php app/console kuma:generate:entity --prefix=demo_</info>
+<info>php bin/console kuma:generate:entity --prefix=demo_</info>
 EOT
             );
     }
@@ -96,8 +96,8 @@ EOT
         $this->assistant->writeSection('Entity successfully created', 'bg=green;fg=black');
         $this->assistant->writeLine(array(
             'Make sure you update your database first before you test the entity:',
-            '    Directly update your database:          <comment>app/console doctrine:schema:update --force</comment>',
-            '    Create a Doctrine migration and run it: <comment>app/console doctrine:migrations:diff && app/console doctrine:migrations:migrate</comment>',
+            '    Directly update your database:          <comment>bin/console doctrine:schema:update --force</comment>',
+            '    Create a Doctrine migration and run it: <comment>bin/console doctrine:migrations:diff && bin/console doctrine:migrations:migrate</comment>',
         ));
     }
 
@@ -111,6 +111,7 @@ EOT
         /*
          * Ask for which bundle we need to create the pagepart
          */
+// FIXME: we need decission making login here, sf3 or sf4, different path
         $this->bundle = $this->askForBundleName('entity');
 
         /*
@@ -119,7 +120,7 @@ EOT
         $this->prefix = $this->askForPrefix(null, $this->bundle->getNamespace());
 
         /*
-         * Ask the name of the pagepart
+         * Ask the name of the entity
          */
         $this->assistant->writeLine(array(
             '',
@@ -127,6 +128,8 @@ EOT
             '',
         ));
         $generator = $this->getGenerator();
+
+// fixme: BUNDLE???
         $bundlePath = $this->bundle->getPath();
         $name = $this->assistant->askAndValidate(
             'Entity name',
@@ -141,6 +144,7 @@ EOT
                 }
 
                 // Check that entity does not already exist
+// fixme: BUNDLE???
                 if (file_exists($bundlePath.'/Entity/'.$name.'.php')) {
                     throw new \InvalidArgumentException(sprintf('Entity "%s" already exists', $name));
                 }

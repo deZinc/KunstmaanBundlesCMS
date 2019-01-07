@@ -103,6 +103,7 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      */
     protected function getOwnBundles()
     {
+// fixme: BUNDLE???
         $bundles = array();
         $counter = 1;
         $dir = dirname($this->getContainer()->getParameter('kernel.root_dir').'/').'/src/';
@@ -279,6 +280,11 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         $bundle = $this->assistant->getKernel()->getBundle($bundleName);
 
         return $bundle;
+    }
+
+    protected function askForDestinationPath()
+    {
+        
     }
 
     /**
