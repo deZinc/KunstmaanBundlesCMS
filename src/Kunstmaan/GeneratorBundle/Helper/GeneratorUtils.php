@@ -147,10 +147,33 @@ class GeneratorUtils
      * @param $namespace
      *
      * @return string
+     *
+     * @deprecated
      */
     public static function fixNamespace($namespace)
     {
-        return str_replace('\\', '/', $namespace);
+        return str_replace('\\', \DIRECTORY_SEPARATOR, $namespace);
+    }
+
+    /**
+     * @param string $projectDir
+     * @param string $classname
+     *
+     * @return string
+     */
+    public static function mapClassNameToPath(string $projectDir, string $classname)
+    {
+        if ((float) Kernel::VERSION > 4.0) {
+            $prefix = 'App\\';
+            if (substr($classname, 0, strlen($prefix)) == $prefix) {
+                $classname = substr($classname, strlen($prefix));
+            }
+        }
+
+        return
+            $projectDir.\DIRECTORY_SEPARATOR.'src'.\DIRECTORY_SEPARATOR.
+            str_replace('\\', \DIRECTORY_SEPARATOR, $classname)
+        ;
     }
 
     /**

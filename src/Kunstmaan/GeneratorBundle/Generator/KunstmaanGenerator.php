@@ -5,7 +5,6 @@ namespace Kunstmaan\GeneratorBundle\Generator;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\Mapping\UnderscoreNamingStrategy;
 use Doctrine\ORM\Tools\EntityGenerator;
-use Doctrine\ORM\Tools\EntityRepositoryGenerator;
 use Kunstmaan\GeneratorBundle\Helper\CommandAssistant;
 use Kunstmaan\GeneratorBundle\Helper\GeneratorUtils;
 use Sensio\Bundle\GeneratorBundle\Generator\Generator;
@@ -14,6 +13,8 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
+use Symfony\Component\HttpKernel\Kernel;
+use Kunstmaan\GeneratorBundle\Helper\EntityRepositoryGenerator;
 
 /**
  * Class that contains all common generator logic.
@@ -44,6 +45,11 @@ class KunstmaanGenerator extends Generator
      * @var ContainerInterface
      */
     protected $container;
+
+    /**
+     * @var string
+     */
+    protected $srcPath;
 
     /**
      * @param Filesystem         $filesystem  The filesystem
@@ -83,48 +89,50 @@ class KunstmaanGenerator extends Generator
     /**
      * Generate the entity PHP code.
      *
-     * @param BundleInterface $bundle
+     * @param string          $namespace
      * @param string          $name
      * @param array           $fields
      * @param string          $namePrefix
      * @param string          $dbPrefix
      * @param string|null     $extendClass
      * @param bool            $withRepository
+     * @param string|null     $repositoryNamespace
      *
      * @return array
      *
      * @throws \RuntimeException
      */
     protected function generateEntity(
-        BundleInterface $bundle,
+        string $namespace,
         $name,
         $fields,
         $namePrefix,
         $dbPrefix,
         $extendClass = null,
-        $withRepository = false
+        $withRepository = false,
+        string $repositoryNamespace = null
     ) {
-        // configure the bundle (needed if the bundle does not contain any Entities yet)
+        // check that the namespace exists as an entity namespace
         $config = $this->registry->getManager(null)->getConfiguration();
-        $config->setEntityNamespaces(
-            array_merge(
-                array($bundle->getName() => $bundle->getNamespace() . '\\Entity' . ($namePrefix ? '\\' . $namePrefix : '')),
-                $config->getEntityNamespaces()
-            )
-        );
+        if (!in_array($namespace, $config->getEntityNamespaces() )) {
+            throw new \RuntimeException(sprintf('This namespace is not yet registered as an entity namespace: %s.', $namespace));
+        }
 
-        $entityClass = $this->registry->getAliasNamespace($bundle->getName()) . ($namePrefix ? '\\' . $namePrefix : '') . '\\' . $name;
-        $entityPath = $bundle->getPath() . '/Entity/' . ($namePrefix ? $namePrefix . '/' : '') . str_replace('\\', '/', $name) . '.php';
+        $projectDir = $this->container->getParameter('kernel.project_dir');
+        $entityClass = $namespace.($namePrefix ? '\\'.$namePrefix : '').'\\'.$name;
+        $entityPath = GeneratorUtils::mapClassNameToPath($projectDir, $entityClass).'.php';
+
         if (file_exists($entityPath)) {
             throw new \RuntimeException(sprintf('Entity "%s" already exists.', $entityClass));
         }
 
         $class = new ClassMetadataInfo($entityClass, new UnderscoreNamingStrategy());
+
         if ($withRepository) {
-            $entityClass = preg_replace('/\\\\Entity\\\\/', '\\Repository\\', $entityClass, 1);
-            $class->customRepositoryClassName = $entityClass.'Repository';
-            $path = $bundle->getPath().str_repeat('/..', substr_count(get_class($bundle), '\\'));
-            $this->getRepositoryGenerator()->writeEntityRepositoryClass($class->customRepositoryClassName, $path);
+            $repositoryClass = $repositoryNamespace.($namePrefix ? '\\'.$namePrefix : '').'\\'.$name.'Repository';
+            $repositoryPath = GeneratorUtils::mapClassNameToPath($projectDir, $repositoryClass).'.php';
+            $class->customRepositoryClassName = $repositoryClass;
+            $this->getRepositoryGenerator()->writeEntityRepositoryClass($entityClass, $repositoryClass, $repositoryPath);
         }
 
         foreach ($fields as $fieldSet) {
@@ -141,13 +149,13 @@ class KunstmaanGenerator extends Generator
             }
         }
         $class->setPrimaryTable(
-            array(
-                'name' => strtolower($dbPrefix . strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name))) . 's',
-            )
+            [
+                'name' => strtolower($dbPrefix.strtolower(preg_replace('/([a-z])([A-Z])/', '$1_$2', $name))).'s',
+            ]
         );
         $entityCode = $this->getEntityGenerator($extendClass)->generateEntityClass($class);
 
-        return array($entityCode, $entityPath);
+        return [$entityCode, $entityPath];
     }
 
     /**
@@ -465,7 +473,7 @@ class KunstmaanGenerator extends Generator
     }
 
     /**
-     * @return \Doctrine\ORM\Tools\EntityRepositoryGenerator
+     * @return \Kunstmaan\GeneratorBundle\Helper\EntityRepositoryGenerator
      */
     protected function getRepositoryGenerator()
     {

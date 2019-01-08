@@ -11,9 +11,9 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 class DefaultEntityGenerator extends KunstmaanGenerator
 {
     /**
-     * @var BundleInterface
+     * @var string
      */
-    private $bundle;
+    private $namespace;
 
     /**
      * @var string
@@ -31,27 +31,29 @@ class DefaultEntityGenerator extends KunstmaanGenerator
     private $fields;
 
     /**
-     * @param BundleInterface $bundle         The bundle
-     * @param string          $entity         The entity name
-     * @param string          $prefix         The database prefix
-     * @param array           $fields         The fields
+     * @param string          $namespace            The entity namespace
+     * @param string          $entity               The entity name
+     * @param string          $prefix               The database prefix
+     * @param array           $fields               The fields
      * @param bool            $withRepository
+     * @param null|string     $repositoryNamespace
      */
-    public function generate(BundleInterface $bundle, $entity, $prefix, array $fields, $withRepository = false)
+    public function generate(string $namespace, $entity, $prefix, array $fields, $withRepository = false, $repositoryNamespace = null)
     {
-        $this->bundle = $bundle;
+        $this->namespace = $namespace;
         $this->entity = $entity;
         $this->prefix = $prefix;
         $this->fields = $fields;
 
         list($entityCode, $entityPath) = $this->generateEntity(
-            $this->bundle,
+            $this->namespace,
             $this->entity,
             $this->fields,
             '',
             $this->prefix,
             AbstractEntity::class,
-            $withRepository
+            $withRepository,
+            $repositoryNamespace
         );
 
         $pos = strrpos($entityCode, '}');

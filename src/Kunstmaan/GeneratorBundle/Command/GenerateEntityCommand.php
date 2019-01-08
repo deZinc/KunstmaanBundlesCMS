@@ -3,6 +3,7 @@
 namespace Kunstmaan\GeneratorBundle\Command;
 
 use Kunstmaan\GeneratorBundle\Generator\DefaultEntityGenerator;
+use Kunstmaan\GeneratorBundle\Helper\GeneratorUtils;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 
@@ -12,9 +13,9 @@ use Symfony\Component\HttpKernel\Bundle\BundleInterface;
 class GenerateEntityCommand extends KunstmaanGenerateCommand
 {
     /**
-     * @var BundleInterface
+     * @var string
      */
-    private $bundle;
+    private $namespace;
 
     /**
      * @var string
@@ -37,6 +38,11 @@ class GenerateEntityCommand extends KunstmaanGenerateCommand
     private $withRepository;
 
     /**
+     * @var string|null
+     */
+    private $repositoryNamespace = null;
+
+    /**
      * {@inheritdoc}
      */
     protected function configure()
@@ -47,6 +53,7 @@ class GenerateEntityCommand extends KunstmaanGenerateCommand
             ->addOption('namespace', '', InputOption::VALUE_OPTIONAL, 'The namespace where you want the entity to be generated')
             ->addOption('prefix', '', InputOption::VALUE_OPTIONAL, 'The prefix to be used in the table names of the generated entities')
             ->addOption('with-repository', null, InputOption::VALUE_NONE, 'Whether to generate the entity repository or not (y/n)')
+            ->addOption('repository-namespace', '', InputOption::VALUE_OPTIONAL, 'The namespace where you want the repository to be generated')
             ->setHelp(<<<'EOT'
 The <info>kuma:generate:entity</info> task generates a new entity inside a bundle:
 
@@ -93,7 +100,7 @@ EOT
     {
         $this->assistant->writeSection('Entity generation');
 
-        $this->createGenerator()->generate($this->bundle, $this->entityName, $this->prefix, $this->fields, $this->withRepository);
+        $this->createGenerator()->generate($this->namespace, $this->entityName, $this->prefix, $this->fields, $this->withRepository, $this->repositoryNamespace);
 
         $this->assistant->writeSection('Entity successfully created', 'bg=green;fg=black');
         $this->assistant->writeLine(array(
@@ -113,9 +120,7 @@ EOT
         /*
          * Ask for which bundle we need to create the pagepart
          */
-        $this->namespace = $this->askForNamespace('Entity');
-// FIXME: remove this
-//        $this->bundle = $this->askForBundleName('entity');
+        $this->namespace = $this->askForNamespace('Entity', 'namespace');
 
         /*
          * Ask the database table prefix
@@ -132,11 +137,9 @@ EOT
         ));
         $generator = $this->getGenerator();
 
-// fixme: BUNDLE???
-        $bundlePath = $this->bundle->getPath();
         $name = $this->assistant->askAndValidate(
             'Entity name',
-            function ($name) use ($generator, $bundlePath) {
+            function ($name) use ($generator) {
                 // Check reserved words
                 if ($generator->isReservedKeyword($name)) {
                     throw new \InvalidArgumentException(sprintf('"%s" is a reserved word', $name));
@@ -147,8 +150,8 @@ EOT
                 }
 
                 // Check that entity does not already exist
-// fixme: BUNDLE???
-                if (file_exists($bundlePath.'/Entity/'.$name.'.php')) {
+                $path = GeneratorUtils::mapClassNameToPath($this->getContainer()->getParameter('kernel.project_dir'), $this->namespace.\DIRECTORY_SEPARATOR.$name);
+                if (file_exists( $path.'.php')) {
                     throw new \InvalidArgumentException(sprintf('Entity "%s" already exists', $name));
                 }
 
@@ -161,24 +164,23 @@ EOT
          * Ask which fields need to be present
          */
         $this->assistant->writeLine(array("\nInstead of starting with a blank entity, you can add some fields now.\n"));
-        $fields = $this->askEntityFields($this->bundle);
+        $fields = $this->askEntityFields($this->namespace);
         $this->fields = array_map(function ($fieldInfo) {
-// FIXME: remove the $this->bundle's as paramaters here!
             switch ($fieldInfo['type']) {
                 case 'image':
-                    return $this->getEntityFields($this->bundle, $this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'],
+                    return $this->getEntityFields($this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'],
                         $fieldInfo['extra'], true, $fieldInfo['minHeight'], $fieldInfo['maxHeight'], $fieldInfo['minWidth'], $fieldInfo['maxWidth'], $fieldInfo['mimeTypes']);
 
                     break;
 
                 case 'media':
-                    return $this->getEntityFields($this->bundle, $this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'],
+                    return $this->getEntityFields($this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'],
                         $fieldInfo['extra'], true, null, null, null, null, $fieldInfo['mimeTypes']);
 
                     break;
 
                 default:
-                    return $this->getEntityFields($this->bundle, $this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'], $fieldInfo['extra'], true);
+                    return $this->getEntityFields($this->entityName, $this->prefix, $fieldInfo['name'], $fieldInfo['type'], $fieldInfo['extra'], true);
 
                     break;
             }
@@ -188,6 +190,11 @@ EOT
          * Ask if a repository class needs to be generated
          */
         $this->withRepository = $this->askForWithRepository();
+
+        // if yes, we need to ask for the repository namespace!
+        if ($this->withRepository) {
+            $this->repositoryNamespace = $this->askForNamespace('Repository', 'repository-namespace');
+        }
     }
 
     /**

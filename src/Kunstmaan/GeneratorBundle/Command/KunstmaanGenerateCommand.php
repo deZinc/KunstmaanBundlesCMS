@@ -106,7 +106,6 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      */
     protected function getOwnBundles()
     {
-// fixme: BUNDLE???
         $bundles = [];
         $counter = 1;
         $dir = dirname($this->getContainer()->getParameter('kernel.root_dir').'/').'/src/';
@@ -155,7 +154,7 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         if (is_null($text)) {
             $text = array(
                 'You can add a prefix to the table names of the generated entities for example: '.
-                '<comment>projectname_bundlename_</comment>',
+                '<comment>projectname_</comment>',
                 'Enter an underscore \'_\' if you don\'t want a prefix.',
                 '',
             );
@@ -192,7 +191,14 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         return $prefix;
     }
 
-    protected function askForNamespace(string $object, $namespace = null)
+    /**
+     * @param string        $object
+     * @param null|string   $option
+     * @param null|string   $namespace
+     *
+     * @return string
+     */
+    protected function askForNamespace(string $object, $option = null, $namespace = null)
     {
         if ((float) Kernel::VERSION > 4.0) {
             $default = 'App';
@@ -202,7 +208,7 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
 
         $default = sprintf('%s\%s', $default, $object);
 
-        $namespace = $this->assistant->getOptionOrDefault('namespace', $default);
+        $namespace = $this->assistant->getOptionOrDefault($option, $default);
 
         while (is_null($namespace)) {
 
@@ -215,11 +221,18 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
                 break;
             }
 
-// FIXME: need some validation here!
-//            $output = $this->assistant->getOutput();
+            $output = $this->assistant->getOutput();
+            if (!preg_match('/^[a-z\\\\]+$/i', $namespace)) {
+                $output->writeln(sprintf('<bg=red> "%s" contains invalid characters</>', $namespace));
+                $namespace = $text = null;
+
+                continue;
+            }
 
             $this->assistant->setOption('namespace', $namespace);
         }
+
+        return $namespace;
     }
 
     /**
@@ -262,7 +275,6 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      *
      * @return BundleInterface
      *
-     * FIXME: this should be removed!
      * @deprecated
      */
     protected function askForBundleName($objectName, $namespace = null, $questionMoreBundles = "\nIn which bundle do you want to create the %s", $questionOneBundle = "The %s will be created for the <comment>%s</comment> bundle.\n")
@@ -435,14 +447,13 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
     /**
      * Get an array of fields that need to be added to the entity.
      *
-     * @param BundleInterface $bundle
+     * @param string          $namespace
      * @param array           $reservedFields
      *
      * @return array
      */
-    protected function askEntityFields(BundleInterface $bundle, array $reservedFields = array('id'))
+    protected function askEntityFields(string $namespace, array $reservedFields = ['id'])
     {
-// FIXME: $bundle needs to be replaced
         $this->assistant->writeLine('<info>Available field types:</info> ');
         $typeSelect = $this->getTypes(true);
         foreach ($typeSelect as $type) {
@@ -497,25 +508,11 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
 
             // If single -or multipe entity reference in chosen, we need to ask for the entity name
             if (in_array($typeStrings[$typeId], array('single_ref', 'multi_ref'))) {
-                $bundleName = $bundle->getName();
-                $question = "Reference entity name (eg. $bundleName:FaqItem, $bundleName:Blog/Comment)";
+                $question = "Reference entity name (eg. App\Entity\FaqItem)";
                 $name = $this->assistant->askAndValidate(
                     $question,
                     function ($name) use ($generator, $container) {
-                        /**
-                         * Replace slash to backslash. Eg: CmsBundle:Blog/Comment --> CmsBundle:Blog\Comment
-                         *
-                         * @see \Doctrine\Common\Persistence\Mapping\AbstractClassMetadataFactory::getMetadataFor()
-                         * @see \Doctrine\ORM\Mapping\ClassMetadataFactory::getFqcnFromAlias()
-                         */
-                        $name = strtr($name, '/', '\\');
-
                         $parts = explode(':', $name);
-
-                        // Should contain colon
-                        if (count($parts) != 2) {
-                            throw new \InvalidArgumentException(sprintf('"%s" is an invalid entity name', $name));
-                        }
 
                         // Check reserved words
                         if ($generator->isReservedKeyword($parts[1])) {
@@ -533,7 +530,7 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
                         return $name;
                     },
                     null,
-                    array($bundleName)
+                    [$namespace]
                 );
 
                 $extra = $name;
@@ -673,7 +670,6 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
      * @return array
      */
     protected function getEntityFields(
-        BundleInterface $bundle,
         $objectName,
         $prefix,
         $name,
@@ -686,8 +682,6 @@ abstract class KunstmaanGenerateCommand extends GenerateDoctrineCommand
         $maxWidth = null,
         $mimeTypes = null
     ) {
-        @trigger_error('The bundle parameter is no longer used and will be removed in KunstmaanGeneratorBundle 6.0', E_USER_DEPRECATED);
-
         $fields = array();
         switch ($type) {
             case 'single_line':
