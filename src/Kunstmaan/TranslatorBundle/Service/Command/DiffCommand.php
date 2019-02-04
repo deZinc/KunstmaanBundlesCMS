@@ -7,6 +7,12 @@ use Doctrine\DBAL\Migrations\Tools\Console\Command\GenerateCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
+/**
+ * Class DiffCommand.
+ *
+ * @deprecated This class is deprecated since TranslatorBundle 5.2 and will be removed in TranslatorBundle 6.0.
+ *             This class will not work with doctrine/doctrine-migrations-bundle < 2.0 which the TranslatorBundle started depending on in 5.2
+ */
 class DiffCommand extends GenerateCommand
 {
     protected function configure()

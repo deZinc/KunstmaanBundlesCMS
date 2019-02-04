@@ -107,6 +107,7 @@ services:
             - [setEntityManager, ['@doctrine.orm.default_entity_manager']]
         public: true
 
+    # todo: deprecated in 5.2, remove in 6.0
     kunstmaan_translator.service.command.diff:
         class: 'Kunstmaan\TranslatorBundle\Service\Command\DiffCommand'
 
