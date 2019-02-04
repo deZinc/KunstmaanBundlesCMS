@@ -4,7 +4,6 @@ namespace Kunstmaan\TranslatorBundle\Command;
 
 use Doctrine\Bundle\DoctrineBundle\Command\Proxy\DoctrineCommandHelper;
 use Doctrine\Bundle\MigrationsBundle\Command\DoctrineCommand;
-use Doctrine\Migrations\Configuration\Configuration;
 use Kunstmaan\TranslatorBundle\Service\Migrations\MigrationsService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -80,14 +79,14 @@ class MigrationsDiffCommand extends DynamicGenerateCommand
     }
 
     /**
-     * @param Configuration $configuration
+     * @param \Doctrine\DBAL\Migrations\Configuration\Configuration|\Doctrine\Migrations\Configuration\Configuration $configuration
      * @param array         $sql
      *
      * @return string
      *
      * @throws \Doctrine\DBAL\DBALException
      */
-    private function buildCodeFromSql(Configuration $configuration, array $sql)
+    private function buildCodeFromSql(/*\Doctrine\Migrations\Configuration\Configuration*/ $configuration, array $sql)
     {
         $currentPlatform = $configuration->getConnection()->getDatabasePlatform()->getName();
         $code = [
