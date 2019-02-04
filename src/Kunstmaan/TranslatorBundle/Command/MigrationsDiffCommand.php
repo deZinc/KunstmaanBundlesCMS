@@ -5,18 +5,24 @@ namespace Kunstmaan\TranslatorBundle\Command;
 use Doctrine\Bundle\DoctrineBundle\Command\Proxy\DoctrineCommandHelper;
 use Doctrine\Bundle\MigrationsBundle\Command\DoctrineCommand;
 use Doctrine\Migrations\Configuration\Configuration;
-use Doctrine\Migrations\Tools\Console\Command\GenerateCommand;
 use Kunstmaan\TranslatorBundle\Service\Migrations\MigrationsService;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+
+// NEXT_MAJOR: BC layer for moved GenerateCommand in doctrine/doctrine-migration-bundle > = 2.0. Remove this else (keep the if)
+if(class_exists('\Doctrine\Migrations\Tools\Console\Command\GenerateCommand')) {
+    class DynamicGenerateCommand extends \Doctrine\Migrations\Tools\Console\Command\GenerateCommand {}
+} else {
+    class DynamicGenerateCommand extends \Doctrine\DBAL\Migrations\Tools\Console\Command\GenerateCommand {}
+}
 
 /**
  * Command for generate migration classes by checking the translation flag value
  *
  * @final since 5.1
  */
-class MigrationsDiffCommand extends GenerateCommand
+class MigrationsDiffCommand extends DynamicGenerateCommand
 {
     /**
      * @var MigrationsService
