@@ -23,6 +23,8 @@ services:
             - { name: console.command }
 
     Kunstmaan\TranslatorBundle\Command\MigrationsDiffCommand:
+        arguments:
+            - '@kunstmaan_translator.service.migrations.migrations'
         tags:
             - { name: console.command }
 
